@@ -1,6 +1,6 @@
 /selfoss/data/logs/*.log {
     rotate 9
-	size 1k
+    size 1k
     missingok
     notifempty
     compress
