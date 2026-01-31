@@ -18,6 +18,7 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 RUN apk upgrade --no-cache \
  && apk add --no-cache \
+    logrotate \
     ca-certificates \
     s6 \
     su-exec \
