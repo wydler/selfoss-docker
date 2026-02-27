@@ -87,4 +87,4 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}
           readme-filepath: ./README-dockerhub.md
-          short-description: "Docker image for the ultimate multi-purpose RSS reader, data stream, mash-up, aggregation web application"
+          short-description: "The ultimate multi-purpose RSS reader, data stream, mash-up, aggregation web application"
