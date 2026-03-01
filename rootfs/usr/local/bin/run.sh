@@ -1,17 +1,5 @@
 #!/bin/sh
 
-# Check if group selfoss exist
-# False: Create group
-if ! grep -q "^selfoss:" /etc/group; then
-  addgroup -S selfoss -g $GID
-fi
-
-# Check if user selfoss exist
-# False: Create suer
-if ! grep -q "^selfoss:" /etc/passwd; then
-  adduser -S selfoss -u $UID -G selfoss -s /bin/sh
-fi  
-
 # Set cron period, attachment size limit and memory limit
 sed -i "s/<CRON_PERIOD>/$CRON_PERIOD/g" /services/cron/run
 sed -i "s/<UPLOAD_MAX_SIZE>/$UPLOAD_MAX_SIZE/g" /etc/php82/conf.d/99_custom.ini /etc/nginx/nginx.conf

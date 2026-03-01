@@ -90,6 +90,12 @@ COPY --from=builder /selfoss /selfoss
 RUN mkdir -p /selfoss/data
 
 ############################
+# Non-root user
+############################
+RUN addgroup -S selfoss -g $GID \
+    && adduser -S selfoss -u $UID -G selfoss -s /bin/sh
+
+############################
 # Security adjustments
 ############################
 RUN setcap cap_setgid=ep /bin/busybox \
