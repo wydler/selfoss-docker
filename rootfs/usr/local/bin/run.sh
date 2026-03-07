@@ -2,6 +2,20 @@
 set -eu
 
 ########################################
+# Create selfoss user and group
+########################################
+if ! grep -q "^selfoss:" /etc/group; then
+  addgroup -S selfoss -g $GID
+fi
+
+# Check if user selfoss exist
+# False: Create suer
+if ! grep -q "^selfoss:" /etc/passwd; then
+  adduser -S selfoss -u $UID -G selfoss -s /bin/sh
+fi  
+
+
+########################################
 # Generate configuration from templates
 ########################################
 
