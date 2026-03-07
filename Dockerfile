@@ -18,7 +18,7 @@ RUN wget -q https://github.com/fossar/selfoss/releases/download/${VERSION}/selfo
     && echo "${SHA256_HASH}  selfoss.zip" | sha256sum -c - \
     && unzip -q selfoss.zip -d . \
     && mv selfoss /selfoss \
-    && rm -rf *
+    && rm -rf ./*
 
 ############################
 # Stage 2: Runtime
