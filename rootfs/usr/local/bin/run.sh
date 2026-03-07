@@ -57,7 +57,7 @@ fi
 # Permissions (only where needed)
 ########################################
 
-chown -R $UID:$GID /selfoss /services /var/log /var/lib/nginx
+chown -R "$UID:$GID" /selfoss /services /var/log /var/lib/nginx
 chown root:selfoss /etc/crontabs/selfoss
 chmod 755 /etc/crontabs/selfoss
 
