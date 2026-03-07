@@ -1,4 +1,5 @@
 #!/bin/sh
+set -eu
 
 ########################################
 # Generate configuration from templates
