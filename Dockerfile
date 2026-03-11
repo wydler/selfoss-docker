@@ -3,8 +3,8 @@
 ############################
 FROM alpine:3.22.2 AS builder
 
-ARG VERSION=2.19
-ARG SHA256_HASH="e49c4750e9723277963ca699b602f09f9148e2b9f258fce6b14429498af0e4fc"
+ARG VERSION=2.20-f837ee6
+ARG SHA256_HASH="85c992ca02229f43466d4d316720194855931d1c426a64a2c08487e3dc49353d"
 
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
@@ -14,7 +14,7 @@ RUN apk add --no-cache wget unzip ca-certificates
 WORKDIR /tmp/selfoss
 
 # Selfoss herunterladen + checksum prüfen
-RUN wget -q https://github.com/fossar/selfoss/releases/download/${VERSION}/selfoss-${VERSION}.zip -O selfoss.zip \
+RUN wget -q https://dl.cloudsmith.io/public/fossar/selfoss-git/raw/names/selfoss.zip/versions/${VERSION}/selfoss-${VERSION}.zip -O selfoss.zip \
     && echo "${SHA256_HASH}  selfoss.zip" | sha256sum -c - \
     && unzip -q selfoss.zip -d . \
     && mv selfoss /selfoss \
