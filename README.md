@@ -1,4 +1,4 @@
-# selfoss [![Docker Image Size (latest semver)](https://img.shields.io/docker/image-size/wydler/selfoss)](https://hub.docker.com/r/wydler/selfoss) [![Docker Pulls](https://img.shields.io/docker/pulls/wydler/selfoss)](https://hub.docker.com/r/wydler/selfoss)
+# selfoss [![Docker Image Version (tag latest)](https://img.shields.io/docker/v/wydler/selfoss/latest)](https://hub.docker.com/r/wydler/selfoss) [![Docker Image Size (tag latest)](https://img.shields.io/docker/image-size/wydler/selfoss/latest)](https://hub.docker.com/r/wydler/selfoss) [![Docker Pulls](https://img.shields.io/docker/pulls/wydler/selfoss)](https://hub.docker.com/r/wydler/selfoss) [![Docker Stars](https://img.shields.io/docker/stars/wydler/selfoss)](https://hub.docker.com/r/wydler/selfoss)
 
 ![selfoss](selfoss-logo.png "selfoss")
 
