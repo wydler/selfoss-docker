@@ -1,0 +1,3 @@
+VERSION=2.19
+SHA256_HASH=e49c4750e9723277963ca699b602f09f9148e2b9f258fce6b14429498af0e4fc
+URL=https://github.com/fossar/selfoss/releases/download/${VERSION}/selfoss-${VERSION}.zip
