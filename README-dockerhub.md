@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/dwydler/selfoss-docker/refs/heads/master/selfoss-logo.png" alt="Docker selfoss Logo" width="200" height="200">
+  <img src="https://raw.githubusercontent.com/wydler/selfoss-docker/refs/heads/master/selfoss-logo.png" alt="Docker selfoss Logo" width="200" height="200">
 </p>
 
 # Docker Selfoss
 
 A lightweight Docker image for the ultimate multi-purpose RSS reader, data stream, mash-up, aggregation web application
 
-[![Build and Publish Docker Image](https://github.com/dwydler/selfoss-docker/actions/workflows/build.docker.images.yml/badge.svg)](https://github.com/dwydler/selfoss-docker/blob/master/.github/workflows/build.docker.images.yml)
+[![Build and Publish Docker Image](https://github.com/wydler/selfoss-docker/actions/workflows/build.docker.images.yml/badge.svg)](https://github.com/wydler/selfoss-docker/blob/master/.github/workflows/build.docker.images.yml)
 
 ## 📦 Available Tags
 
@@ -66,8 +66,8 @@ services:
 
 ## 🔗 Links
 
-- [GitHub Repository](https://github.com/dwydler/selfoss-docker)
-- [Full Documentation](https://github.com/dwydler/selfoss-docker/blob/master/README.md)
+- [GitHub Repository](https://github.com/wydler/selfoss-docker)
+- [Full Documentation](https://github.com/wydler/selfoss-docker/blob/master/README.md)
 
 ## 📄 License
 
