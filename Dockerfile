@@ -31,10 +31,10 @@ FROM alpine:3.22.2
 LABEL maintainer="Daniel Wydler" \
       org.opencontainers.image.authors="Daniel Wydler" \
       org.opencontainers.image.description="Up-to-date Selfoss, a multipurpose RSS reader, live stream, mashup, aggregation web application." \
-      org.opencontainers.image.documentation="https://github.com/dwydler/selfoss-docker/blob/master/README.md" \
-      org.opencontainers.image.source="https://github.com/dwydler/selfoss-docker" \
+      org.opencontainers.image.documentation="https://github.com/wydler/selfoss-docker/blob/master/README.md" \
+      org.opencontainers.image.source="https://github.com/wydler/selfoss-docker" \
       org.opencontainers.image.title="wydler/selfoss" \
-      org.opencontainers.image.url="https://github.com/dwydler/selfoss-docker"
+      org.opencontainers.image.url="https://github.com/wydler/selfoss-docker"
 
 ############################
 # Arguments & Environment
