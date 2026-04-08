@@ -4,7 +4,7 @@ name: Update selfoss
 "on":
   workflow_dispatch:  # Workflow manuell auslösbar
   schedule:
-    - cron: '0 4 * * *'  # Jeden Tag um 05:00 CET / 04:00 UTC  
+    - cron: '0 4 * * *'  # Jeden Tag um 05:00 CET / 04:00 UTC
 
 
 permissions:
@@ -21,7 +21,7 @@ jobs:
       # Holt den aktuellen Code aus dem Repository
       - name: Checkout Repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-        
+
       - name: Pruefe neue Version bei Cloudsmith
         id: check
         run: |
@@ -30,7 +30,7 @@ jobs:
 
           #
           TMP_FILE=versions.json
-          
+
           # Aktuelle Version aus selfoss.snapshot auslesen
           CURRENT_VERSION=$(grep '^VERSION=' selfoss.snapshot | cut -d '=' -f2)
           echo "Aktuelle Version: $CURRENT_VERSION"
@@ -52,11 +52,11 @@ jobs:
             echo "update=false" >> $GITHUB_OUTPUT
           else
             echo "Neue Version: $NEXT_VERSION"
-  
+
             # SHA256 Hash zur gefundenen Version aus dem JSON extrahieren
             NEXT_SHA=$(jq -r --arg v "$NEXT_VERSION" '.[] | select(.version == $v) | .checksum_sha256' $TMP_FILE)
             echo "SHA256: $NEXT_SHA"
-  
+
             # Workflow-Ausgaben setzen, damit spätere Schritte darauf zugreifen können
             echo "update=true" >> $GITHUB_OUTPUT
             echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
@@ -89,7 +89,7 @@ jobs:
         with:
           app-id: ${{ secrets.GH_APP_RDP_ID }}
           private-key: ${{ secrets.GH_APP_RDP_PRIVATE_KEY }}
-          
+
       - name: Pull Request erstellen
         if: steps.check.outputs.update == 'true'
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
@@ -106,7 +106,7 @@ jobs:
             | selfoss | snapshot | minor | `${{ steps.check.outputs.cversion }}` → `${{ steps.check.outputs.version }}` |
 
             SHA256: ${{ steps.check.outputs.sha }}
-            
+
             ---
 
             ### Configuration
