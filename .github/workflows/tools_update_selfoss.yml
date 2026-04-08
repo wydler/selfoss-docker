@@ -2,9 +2,9 @@
 name: Update selfoss
 
 "on":
-  workflow_dispatch: # Workflow manuell auslösbar
+  workflow_dispatch:  # Workflow manuell auslösbar
   schedule:
-    - cron: '0 4 * * *' # Jeden Tag um 05:00 CET / 04:00 UTC  
+    - cron: '0 4 * * *'  # Jeden Tag um 05:00 CET / 04:00 UTC  
 
 
 permissions:
