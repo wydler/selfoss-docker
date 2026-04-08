@@ -1,5 +1,5 @@
 ---
-name: Update selfoss
+name: Manage - Update selfoss
 
 "on":
   workflow_dispatch:  # Workflow manuell auslösbar
