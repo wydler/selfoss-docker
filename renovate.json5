@@ -1,0 +1,73 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+    'helpers:pinGitHubActionDigests',
+  ],
+  commitMessagePrefix: 'chore(deps):',
+  timezone: 'Europe/Berlin',
+  prHourlyLimit: 0,
+  prConcurrentLimit: 0,
+  automerge: false,
+  enabledManagers: [
+    'github-actions',
+    'dockerfile',
+  ],
+
+  packageRules: [
+    {
+      // ===========================================================================
+      // Aktiviert Renovate-Regeln für Docker-basierte Dependencies
+      // ===========================================================================  
+      matchCategories: [
+        'docker',
+      ],
+      enabled: true,
+    },
+    {
+      // ===========================================================================
+      // Docker Repository - Alpine
+      // ===========================================================================  
+      description: 'Alpine base image updates',
+      matchDatasources: [
+        'docker',
+      ],
+      matchPackageNames: [
+        'alpine',
+      ],
+      versioning: 'docker',
+      rangeStrategy: 'pin',
+      labels: [
+        'dependencies',
+        'docker',
+      ],
+      draftPR: true,
+      additionalBranchPrefix: 'docker/',
+      branchTopic: '{{depNameSanitized}}-{{newVersion}}',
+      commitMessageTopic: '{{depName}}',
+      commitMessageExtra: 'from {{currentVersion}} to {{newVersion}}',
+      // erlaubt nur gleiche Major.Minor (z.B. 3.22.x)
+      allowedVersions: "<3.23.0",
+    },
+    {
+      // ===========================================================================
+      // GitHub Actions
+      // ===========================================================================  
+      matchManagers: [
+        'github-actions',
+      ],
+      labels: [
+        'dependencies',
+        'github_actions',
+      ],
+      matchPackageNames: [
+        '*',
+      ],
+      draftPR: true,
+      additionalBranchPrefix: 'github_action/',
+      branchTopic: '{{depNameSanitized}}-{{newVersion}}',
+      commitMessageTopic: '{{depName}}',
+      commitMessageExtra: 'from {{currentVersion}} to {{newVersion}}',
+    },
+  ],
+}
