@@ -2,6 +2,8 @@
 name: Tools - Renovate
 
 "on":
+  schedule:
+    - cron: "0 5  * * 6"  
   workflow_dispatch:
     inputs:
       logLevel:
