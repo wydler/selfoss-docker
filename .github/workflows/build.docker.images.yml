@@ -10,6 +10,7 @@ name: Build & publish docker images
         options:
           - release
           - snapshot
+          - compose
         default: "release"
   release:
     types:
@@ -25,7 +26,7 @@ env:
   REGISTRY_REPO: ${{ vars.REGISTRY_REPO }}
   REGISTRY_REPO_TAG_CACHE_NAME: ${{ vars.REGISTRY_REPO_TAG_CACHE_NAME }}
   REGISTRY_PLATFORMS: ${{ vars.REGISTRY_PLATFORMS }}
-
+  
   SOFTWARE_BUILD: ${{ github.event.inputs.softwarebuild  || 'release' }}
 
 jobs:
@@ -59,6 +60,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Load selfoss.${{ env.SOFTWARE_BUILD }} file
+        if: env.SOFTWARE_BUILD == 'release' || env.SOFTWARE_BUILD == 'snapshot'
         id: selfoss
         run: |
           set -a
@@ -70,6 +72,7 @@ jobs:
           echo "APP_DL_PATH=$URL" >> $GITHUB_OUTPUT
 
       - name: Display vars from selfoss.${{ env.SOFTWARE_BUILD }} file
+        if: env.SOFTWARE_BUILD == 'release' || env.SOFTWARE_BUILD == 'snapshot'
         run: |
           echo "Version: ${{ steps.selfoss.outputs.VERSION }}"
           echo "Hash: ${{ steps.selfoss.outputs.SHA256_HASH }}"
@@ -88,8 +91,13 @@ jobs:
       - name: Create tag list for docker image
         id: tags
         run: |
+          # basename does remove the directory prefix of a path
+          # https://stackoverflow.com/questions/3294072/get-last-dirname-filename-in-a-file-path-argument-in-bash
+          container_tag=$(basename ${{ github.ref_name }})
+          echo $container_tag
+          
           if [ "${{ github.event.release.prerelease }}" = true ]; then
-            echo "docker=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "docker=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:$container_tag" >> $GITHUB_OUTPUT
 
           elif [ ! -z "${{ github.event.release.tag_name }}" ]; then
             echo "docker=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:latest, ${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
@@ -97,13 +105,17 @@ jobs:
           elif [ "${{ env.SOFTWARE_BUILD }}" == "snapshot" ]; then
             echo "docker=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:${{ steps.selfoss.outputs.VERSION }}" >> $GITHUB_OUTPUT
 
+          elif [ "${{ env.SOFTWARE_BUILD }}" == "compose" ]; then
+            echo "docker=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:master-compose" >> $GITHUB_OUTPUT            
+
           else
-            echo "docker=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "docker=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:$container_tag" >> $GITHUB_OUTPUT
 
           fi
 
-      - name: Build and push
+      - name: Build and push (release, snapshot)
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f  # v7.1.0
+        if: env.SOFTWARE_BUILD == 'release' || env.SOFTWARE_BUILD == 'snapshot'
         with:
           context: .
           file: Dockerfile
@@ -116,8 +128,21 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:${{ env.REGISTRY_REPO_TAG_CACHE_NAME }}
           cache-to: type=registry,ref=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:${{ env.REGISTRY_REPO_TAG_CACHE_NAME }},mode=max
 
+      - name: Build and push (compose)
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f  # v7.1.0
+        if: env.SOFTWARE_BUILD == 'compose'
+        with:
+          context: .
+          file: Dockerfile.compose
+          push: true
+          tags: ${{ steps.tags.outputs.docker }}
+          platforms: ${{ env.REGISTRY_PLATFORMS }}
+          cache-from: type=registry,ref=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:${{ env.REGISTRY_REPO_TAG_CACHE_NAME }}
+          cache-to: type=registry,ref=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:${{ env.REGISTRY_REPO_TAG_CACHE_NAME }},mode=max          
+
       - name: Update Docker Repository Description
         uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa  # v5.0.0
+        if: env.SOFTWARE_BUILD == 'release'
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
