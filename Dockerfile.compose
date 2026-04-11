@@ -1,0 +1,133 @@
+############################
+# Stage 1: Builder
+############################
+FROM alpine:3.22.3@sha256:55ae5d250caebc548793f321534bc6a8ef1d116f334f18f4ada1b2daad3251b2 AS builder
+
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
+
+# Build dependencies (nur temporär)
+RUN apk add --no-cache \
+        ca-certificates \
+        php82 \
+        php82-phar \
+        php82-iconv \
+        php82-mbstring \
+        php82-openssl \
+        php82-gd \
+        php82-xml \
+        php82-curl \
+        php82-dom \
+        php82-session \
+        php82-tokenizer \
+        php82-tidy \
+        php82-xmlreader \
+        curl \
+        npm \
+        git
+
+WORKDIR /tmp/selfoss
+
+# Selfoss herunterladen + checksum prüfen
+RUN ln -s $(which php82) /usr/bin/php \
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer \
+    && git clone https://github.com/fossar/selfoss.git . \
+    && npm install && npm run build
+
+############################
+# Stage 2: Runtime
+############################
+FROM alpine:3.22.3@sha256:55ae5d250caebc548793f321534bc6a8ef1d116f334f18f4ada1b2daad3251b2
+
+############################
+# Metadata
+############################
+LABEL maintainer="Daniel Wydler" \
+      org.opencontainers.image.authors="Daniel Wydler" \
+      org.opencontainers.image.description="Up-to-date Selfoss, a multipurpose RSS reader, live stream, mashup, aggregation web application." \
+      org.opencontainers.image.documentation="https://github.com/dwydler/selfoss-docker/blob/master/README.md" \
+      org.opencontainers.image.source="https://github.com/dwydler/selfoss-docker" \
+      org.opencontainers.image.title="wydler/selfoss" \
+      org.opencontainers.image.url="https://github.com/dwydler/selfoss-docker"
+
+############################
+# Arguments & Environment
+############################
+ENV GID=991 \
+    UID=991 \
+    CRON_PERIOD=15m \
+    UPLOAD_MAX_SIZE=25M \
+    LOG_TO_STDOUT=false \
+    MEMORY_LIMIT=128M \
+    TIMEZONE=UTC \
+    LOGROTATE_RETENTION=31
+
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
+
+############################
+# Runtime dependencies
+############################
+# https://forums.docker.com/t/run-crond-as-non-root-user-on-alpine-linux/32644
+# https://github.com/gliderlabs/docker-alpine/issues/381
+# https://github.com/inter169/systs/blob/master/alpine/crond/README.md
+RUN apk add --no-cache \
+        logrotate \
+        busybox-suid \
+        libcap \
+        ca-certificates \
+        s6 \
+        su-exec \
+        nginx \
+        php82 \
+        php82-fpm \
+        php82-gd \
+        php82-curl \
+        php82-mbstring \
+        php82-tidy \
+        php82-session \
+        php82-xml \
+        php82-simplexml \
+        php82-xmlwriter \
+        php82-dom \
+        php82-pecl-imagick \
+        php82-pdo_mysql \
+        php82-pdo_pgsql \
+        php82-pdo_sqlite \
+        php82-iconv \
+        php82-tokenizer \
+        php82-xmlreader
+
+############################
+# Selfoss kopieren
+############################
+COPY --from=builder /tmp/selfoss /selfoss
+RUN mkdir -p /selfoss/data
+
+############################
+# Non-root user
+############################
+RUN addgroup -S selfoss -g $GID \
+    && adduser -S selfoss -u $UID -G selfoss -s /bin/sh
+
+############################
+# Security adjustments
+############################
+RUN setcap cap_setgid=ep /bin/busybox \
+    && rm -rf /etc/logrotate.d/* \
+    && rm -f /etc/crontabs/root
+
+############################
+# RootFS & Permissions
+############################
+COPY rootfs /
+RUN chmod +x /usr/local/bin/run.sh /services/*/run /services/.s6-svscan/*
+
+############################
+# Runtime
+############################
+VOLUME /selfoss/data
+EXPOSE 8888
+
+############################
+# Entrypoint
+############################
+ENTRYPOINT ["/usr/local/bin/run.sh"]
