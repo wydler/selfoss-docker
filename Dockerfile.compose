@@ -1,7 +1,7 @@
 ############################
 # Stage 1: Builder
 ############################
-FROM alpine:3.22.3@sha256:55ae5d250caebc548793f321534bc6a8ef1d116f334f18f4ada1b2daad3251b2 AS builder
+FROM alpine:3.22.4@sha256:310c62b5e7ca5b08167e4384c68db0fd2905dd9c7493756d356e893909057601 AS builder
 
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
@@ -36,7 +36,7 @@ RUN ln -s $(which php82) /usr/bin/php \
 ############################
 # Stage 2: Runtime
 ############################
-FROM alpine:3.22.3@sha256:55ae5d250caebc548793f321534bc6a8ef1d116f334f18f4ada1b2daad3251b2
+FROM alpine:3.22.4@sha256:310c62b5e7ca5b08167e4384c68db0fd2905dd9c7493756d356e893909057601
 
 ############################
 # Metadata
