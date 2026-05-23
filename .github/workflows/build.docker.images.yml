@@ -114,7 +114,7 @@ jobs:
           fi
 
       - name: Build and push (release, snapshot)
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f  # v7.1.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf  # v7.2.0
         if: env.SOFTWARE_BUILD == 'release' || env.SOFTWARE_BUILD == 'snapshot'
         with:
           context: .
@@ -129,7 +129,7 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:${{ env.REGISTRY_REPO_TAG_CACHE_NAME }},mode=max
 
       - name: Build and push (compose)
-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f  # v7.1.0
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf  # v7.2.0
         if: env.SOFTWARE_BUILD == 'compose'
         with:
           context: .
