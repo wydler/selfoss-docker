@@ -134,3 +134,16 @@ jobs:
             dependencies
             apps
           assignees: dwydler
+
+      - name: Merge the pull request
+        uses: pascalgn/automerge-action@7961b8b5eec56cc088c140b56d864285eabd3f67  # v0.16.4
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          PULL_REQUEST: ${{ steps.cpr.outputs.pr_number }}
+          MERGE_LABELS: "dependencies, apps"
+          UPDATE_LABELS: "dependencies, apps"
+          MERGE_COMMIT_MESSAGE: "${{ github.event.pull_request.title }} (#${{ steps.cpr.outputs.pr_number }})"
+          MERGE_METHOD: "squash"
+          MERGE_RETRIES: 10
+          MERGE_RETRY_SLEEP: 30000  # milliseconds
+          MERGE_READY_STATE: clean
