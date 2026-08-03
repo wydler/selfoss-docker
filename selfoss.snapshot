@@ -1,3 +1,3 @@
-VERSION=2.20-1dca439
-SHA256_HASH=73be8f3d6606f3a4d7ad0ad7925c888a8fbd164e70220dc68acecdc060647916
+VERSION=2.20-6a3db5a
+SHA256_HASH=91a08263eae1f5560d8239f7d8ac2eb40212b7423465d2468e42d22ccb4a97a8
 URL=https://dl.cloudsmith.io/public/fossar/selfoss-git/raw/names/selfoss.zip/versions/${VERSION}/selfoss-${VERSION}.zip
