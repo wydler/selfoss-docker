@@ -133,9 +133,7 @@ jobs:
           branch: renovate/apps/selfoss-${{ steps.check.outputs.version }}
           sign-commits: true
           # Labels, die dem PR hinzugefügt werden
-          labels: |
-            dependencies
-            apps
+          labels: ${{ env.PULLREQUEST_LABELS }}
           assignees: dwydler
 
       - name: Merge the pull request
