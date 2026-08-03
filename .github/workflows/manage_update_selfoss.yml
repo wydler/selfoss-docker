@@ -140,10 +140,10 @@ jobs:
         uses: pascalgn/automerge-action@7961b8b5eec56cc088c140b56d864285eabd3f67  # v0.16.4
         env:
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
-          PULL_REQUEST: ${{ steps.cpr.outputs.pr_number }}
+          PULL_REQUEST: ${{ steps.cpr.outputs.pull-request-number }}
           MERGE_LABELS: ${{ env.PULLREQUEST_LABELS }}
           UPDATE_LABELS: ${{ env.PULLREQUEST_LABELS }}
-          MERGE_COMMIT_MESSAGE: "${{ github.event.pull_request.title }} (#${{ steps.cpr.outputs.pr_number }})"
+          MERGE_COMMIT_MESSAGE: "${{ github.event.pull_request.title }} (#${{ steps.cpr.outputs.pull-request-number }})"
           MERGE_METHOD: "squash"
           MERGE_RETRIES: 10
           MERGE_RETRY_SLEEP: 30000  # milliseconds
