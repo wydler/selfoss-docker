@@ -12,6 +12,13 @@ name: Build & publish docker images
           - snapshot
           - compose
         default: "release"
+
+  workflow_call:
+    inputs:
+      softwarebuild:
+        required: true
+        type: string
+
   release:
     types:
       - released

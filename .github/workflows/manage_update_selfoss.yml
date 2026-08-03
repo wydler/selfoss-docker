@@ -17,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Snapshot Update
 
+    env:
+      PULLREQUEST_LABELS: "dependencies, apps"
+
     steps:
       # Holt den aktuellen Code aus dem Repository
       - name: Checkout Repository
@@ -93,6 +96,7 @@ jobs:
       - name: Pull Request erstellen
         if: steps.check.outputs.update == 'true'
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
+        id: cpr
         with:
           token: ${{ steps.generate-token.outputs.token }}
           # Commit- und PR-Title mit Versionsinformationen
@@ -129,6 +133,32 @@ jobs:
           branch: renovate/apps/selfoss-${{ steps.check.outputs.version }}
           sign-commits: true
           # Labels, die dem PR hinzugefügt werden
-          labels: |
-            dependencies
-            apps
+          labels: ${{ env.PULLREQUEST_LABELS }}
+          assignees: dwydler
+
+      - name: Merge the pull request
+        uses: pascalgn/automerge-action@7961b8b5eec56cc088c140b56d864285eabd3f67  # v0.16.4
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+          PULL_REQUEST: ${{ steps.cpr.outputs.pull-request-number }}
+          MERGE_LABELS: ${{ env.PULLREQUEST_LABELS }}
+          UPDATE_LABELS: ${{ env.PULLREQUEST_LABELS }}
+          MERGE_COMMIT_MESSAGE: "Update selfoss from ${{ steps.check.outputs.cversion }} to ${{ steps.check.outputs.version }} (#${{ steps.cpr.outputs.pull-request-number }})"
+          MERGE_METHOD: "squash"
+          MERGE_RETRIES: 10
+          MERGE_RETRY_SLEEP: 30000  # milliseconds
+          MERGE_READY_STATE: clean
+
+
+  setup-build-push:
+    name: Docker build & push
+    needs:
+      - selfoss-update
+
+    permissions:
+      contents: read
+
+    uses: ./.github/workflows/build.docker.images.yml
+    with:
+      softwarebuild: "snapshot"
+    secrets: inherit
