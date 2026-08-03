@@ -141,8 +141,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
           PULL_REQUEST: ${{ steps.cpr.outputs.pr_number }}
-          MERGE_LABELS: "dependencies, apps"
-          UPDATE_LABELS: "dependencies, apps"
+          MERGE_LABELS: ${{ env.PULLREQUEST_LABELS }}
+          UPDATE_LABELS: ${{ env.PULLREQUEST_LABELS }}
           MERGE_COMMIT_MESSAGE: "${{ github.event.pull_request.title }} (#${{ steps.cpr.outputs.pr_number }})"
           MERGE_METHOD: "squash"
           MERGE_RETRIES: 10
