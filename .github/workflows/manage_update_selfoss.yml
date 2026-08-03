@@ -93,6 +93,7 @@ jobs:
       - name: Pull Request erstellen
         if: steps.check.outputs.update == 'true'
         uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0
+        id: cpr
         with:
           token: ${{ steps.generate-token.outputs.token }}
           # Commit- und PR-Title mit Versionsinformationen
