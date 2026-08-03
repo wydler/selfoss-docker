@@ -148,3 +148,17 @@ jobs:
           MERGE_RETRIES: 10
           MERGE_RETRY_SLEEP: 30000  # milliseconds
           MERGE_READY_STATE: clean
+
+
+  setup-build-push:
+    name: Docker build & push
+    needs:
+      - selfoss-update
+
+    permissions:
+      contents: read
+
+    uses: ./.github/workflows/build.docker.images.yml
+    with:
+      softwarebuild: "snapshot"
+    secrets: inherit
