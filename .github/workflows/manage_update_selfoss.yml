@@ -17,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Snapshot Update
 
+    env:
+      PULLREQUEST_LABELS: "dependencies, apps"
+
     steps:
       # Holt den aktuellen Code aus dem Repository
       - name: Checkout Repository
