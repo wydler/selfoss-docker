@@ -34,7 +34,7 @@ env:
   REGISTRY_REPO_TAG_CACHE_NAME: ${{ vars.REGISTRY_REPO_TAG_CACHE_NAME }}
   REGISTRY_PLATFORMS: ${{ vars.REGISTRY_PLATFORMS }}
 
-  SOFTWARE_BUILD: ${{ github.event.inputs.softwarebuild  || 'release' }}
+  SOFTWARE_BUILD: ${{ inputs.softwarebuild }}
 
 jobs:
   requirements:
