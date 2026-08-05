@@ -65,6 +65,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: "${{ github.ref_name }}"
+          fetch-depth: 0
 
       - name: Load selfoss.${{ env.SOFTWARE_BUILD }} file
         if: env.SOFTWARE_BUILD == 'release' || env.SOFTWARE_BUILD == 'snapshot'
