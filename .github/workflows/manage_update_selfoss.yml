@@ -134,7 +134,6 @@ jobs:
           sign-commits: true
           # Labels, die dem PR hinzugefügt werden
           labels: ${{ env.PULLREQUEST_LABELS }}
-          assignees: dwydler
 
       - name: Merge the pull request
         uses: pascalgn/automerge-action@7961b8b5eec56cc088c140b56d864285eabd3f67  # v0.16.4
