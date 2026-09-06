@@ -81,7 +81,8 @@ RUN apk add --no-cache \
         php82-pdo_sqlite \
         php82-iconv \
         php82-tokenizer \
-        php82-xmlreader
+        php82-xmlreader \
+        php82-ctype
 
 ############################
 # Selfoss kopieren
