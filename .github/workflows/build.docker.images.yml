@@ -49,8 +49,13 @@ jobs:
       contents: read
 
     steps:
-      - name: Check required variables
+      - name: Check required configuration
         shell: bash
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
         run: |
           missing=0
 
@@ -59,17 +64,22 @@ jobs:
             REGISTRY_ACCOUNT \
             REGISTRY_REPO \
             REGISTRY_REPO_TAG_CACHE_NAME \
-            REGISTRY_PLATFORMS
+            REGISTRY_PLATFORMS \
+            DOCKERHUB_USERNAME \
+            DOCKERHUB_TOKEN \
+            COSIGN_PRIVATE_KEY \
+            COSIGN_PASSWORD
           do
             if [[ -z "${!var}" ]]; then
-              echo "::error::Repository variable '$var' is missing."
+              echo "::error::Required setting '$var' is missing."
               missing=1
             else
-              echo "::notice::$var is configured."
+              echo "::notice::Required setting '$var' is configured."
             fi
           done
 
           exit $missing
+
 
   setup-build-push:
     name: Docker build & push
@@ -139,6 +149,7 @@ jobs:
           fi
 
       - name: Build and push (release, snapshot)
+        id: build-release
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
         if: env.SOFTWARE_BUILD == 'release' || env.SOFTWARE_BUILD == 'snapshot'
         with:
@@ -156,6 +167,7 @@ jobs:
           provenance: mode=max
 
       - name: Build and push (compose)
+        id: build-compose
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
         if: env.SOFTWARE_BUILD == 'compose'
         with:
@@ -168,6 +180,95 @@ jobs:
           cache-to: type=registry,ref=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:${{ env.REGISTRY_REPO_TAG_CACHE_NAME }},mode=max
           sbom: true
           provenance: mode=max
+
+      - name: Select build digest
+        id: build
+        shell: bash
+        env:
+          SOFTWARE_BUILD: ${{ env.SOFTWARE_BUILD }}
+          RELEASE_DIGEST: ${{ steps.build-release.outputs.digest }}
+          COMPOSE_DIGEST: ${{ steps.build-compose.outputs.digest }}
+        run: |
+          case "$SOFTWARE_BUILD" in
+            compose)
+              digest="$COMPOSE_DIGEST"
+              ;;
+            release|snapshot)
+              digest="$RELEASE_DIGEST"
+              ;;
+            *)
+              echo "::error::Unsupported software build '$SOFTWARE_BUILD'."
+              exit 1
+              ;;
+          esac
+
+          if [[ -z "$digest" ]]; then
+            echo "::error::The image build did not produce a digest."
+            exit 1
+          fi
+
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6  # v4.1.2
+
+      - name: Show Cosign version
+        shell: bash
+        run: |
+          cosign version
+
+      - name: Sign docker image with a key
+        shell: bash
+        run: |
+          cosign sign \
+            --verbose \
+            --new-bundle-format=true \
+            --use-signing-config=false \
+            --yes \
+            --key env://COSIGN_PRIVATE_KEY ${{ env.REGISTRY }}/${{ steps.tags.outputs.docker }}@${{ steps.build.outputs.digest }}
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+      - name: Verify image signature
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          IMAGE="${{ env.REGISTRY }}/${{ steps.tags.outputs.docker }}@${{ steps.build.outputs.digest }}"
+
+          for i in {1..12}; do
+            echo "Verification attempt ${i}/12..."
+
+            if cosign verify \
+                --key cosign.pub \
+                --output text \
+                "${IMAGE}"; then
+              echo "Signature verified."
+
+              exit 0
+            fi
+
+            echo "Signature not yet available. Waiting 5 seconds..."
+            sleep 5
+          done
+
+          echo "ERROR: Signature could not be verified after 60 seconds."
+          exit 1
+
+      - name: Show Cosign artifact tree
+        shell: bash
+        run: |
+          cosign tree ${{ env.REGISTRY }}/${{ steps.tags.outputs.docker }}@${{ steps.build.outputs.digest }}
+
+
+      - name: Promote image to latest
+        if: github.event_name == 'release' && github.event.action == 'released' && github.event.release.prerelease == false && github.event.release.draft == false
+        shell: bash
+        run: |
+          # Create or update the "latest" tag to point to the newly released image version.
+          # This operation updates the manifest in the registry and preserves all platform variants.
+          docker buildx imagetools create -t "${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:latest" ${{ steps.tags.outputs.docker }}
 
       - name: Update Docker Repository Description
         uses: peter-evans/dockerhub-description@1b9a80c056b620d92cedb9d9b5a223409c68ddfa  # v5.0.0
