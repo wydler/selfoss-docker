@@ -125,28 +125,30 @@ jobs:
 
       - name: Create tag list for docker image
         id: tags
+        env:
+          REGISTRY_ACCOUNT: ${{ env.REGISTRY_ACCOUNT }}
+          REGISTRY_REPO: ${{ env.REGISTRY_REPO }}
+          SOFTWARE_BUILD: ${{ env.SOFTWARE_BUILD }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+          RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
+          SELFOSS_VERSION: ${{ steps.selfoss.outputs.VERSION }}
         run: |
-          # basename does remove the directory prefix of a path
-          # https://stackoverflow.com/questions/3294072/get-last-dirname-filename-in-a-file-path-argument-in-bash
-          container_tag=$(basename ${{ github.ref_name }})
-          echo $container_tag
+          container_tag="${GITHUB_REF_NAME##*/}"
 
-          if [ "${{ github.event.release.prerelease }}" = true ]; then
-            echo "docker=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:$container_tag" >> $GITHUB_OUTPUT
-
-          elif [ ! -z "${{ github.event.release.tag_name }}" ]; then
-            echo "docker=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:latest, ${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
-
-          elif [ "${{ env.SOFTWARE_BUILD }}" == "snapshot" ]; then
-            echo "docker=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:${{ steps.selfoss.outputs.VERSION }}" >> $GITHUB_OUTPUT
-
-          elif [ "${{ env.SOFTWARE_BUILD }}" == "compose" ]; then
-            echo "docker=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:master-compose" >> $GITHUB_OUTPUT
+          if [[ "$RELEASE_PRERELEASE" == "true" ]]; then
+            image_tag="$container_tag"
+          elif [[ -n "$RELEASE_TAG_NAME" ]]; then
+            image_tag="$RELEASE_TAG_NAME"
+          elif [[ "$SOFTWARE_BUILD" == "snapshot" ]]; then
+            image_tag="$SELFOSS_VERSION"
+          elif [[ "$SOFTWARE_BUILD" == "compose" ]]; then
+            image_tag="master-compose"
 
           else
-            echo "docker=${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}:$container_tag" >> $GITHUB_OUTPUT
-
+            image_tag="$container_tag"
           fi
+
+          echo "docker=${REGISTRY_ACCOUNT}/${REGISTRY_REPO}:${image_tag}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push (release, snapshot)
         id: build-release
