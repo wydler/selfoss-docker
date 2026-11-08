@@ -279,5 +279,5 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ env.REGISTRY_ACCOUNT }}/${{ env.REGISTRY_REPO }}
-          readme-filepath: ./README-dockerhub.md
+          readme-filepath: ./docs/DOCKERHUB.md
           short-description: "The ultimate multi-purpose RSS reader, data stream, mash-up, aggregation web application"
