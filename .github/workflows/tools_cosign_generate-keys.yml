@@ -1,0 +1,199 @@
+---
+name: "Tools - Generate Cosign key pair"
+
+"on":
+  workflow_dispatch:
+
+env:
+  branch-name: "cosign-generate-keys"
+
+permissions:
+  contents: read
+
+jobs:
+  check-requires:
+    name: Check requirements
+    runs-on: ubuntu-slim
+
+    steps:
+      - name: Generate app token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # v3.3.0
+        id: generate-token
+        with:
+          client-id: "${{ secrets.gh_app_cos_id }}"
+          private-key: "${{ secrets.gh_app_cos_private_key }}"
+
+      - name: Checkout the current branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: "Check if keys exist and should be regenerated"
+        env:
+          GH_TOKEN: "${{ steps.generate-token.outputs.token }}"
+          COSIGN_OVERWRITE: "${{ vars.COSIGN_OVERWRITE }}"
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo 'Secret mit dem Namen "cosign_gh_token" im Repository nicht gefunden.'
+            exit 1
+          fi
+
+          if [[ "$COSIGN_OVERWRITE" == "0" ]]; then
+            if gh secret list | grep -q "COSIGN_PASSWORD" &&
+               gh secret list | grep -q "COSIGN_PRIVATE_KEY" &&
+               gh secret list | grep -q "COSIGN_PUBLIC_KEY"; then
+
+              echo "::error::Cosign Key Pair existiert bereits und wird nicht überschrieben. Da Variable COSIGN_OVERWRITE aktuell den Wert '0' hat."
+              exit 1
+            fi
+          fi
+
+
+  create-branch:
+    name: Prepare working branch
+    runs-on: ubuntu-slim
+
+    needs:
+      - check-requires
+
+    outputs:
+      name: ${{ steps.branch.outputs.name }}
+
+    steps:
+      - name: Create branch name
+        id: branch
+        run: |
+           BRANCH="${{ env.branch-name }}/$(date +'%Y%m%d-%H%M')"
+           echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
+
+
+  gen-keys:
+    name: "Generate Keys"
+    runs-on: ubuntu-latest
+    needs:
+      - check-requires
+      - create-branch
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Generate app token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # v3.3.0
+        id: generate-token
+        with:
+          client-id: "${{ secrets.gh_app_cos_id }}"
+          private-key: "${{ secrets.gh_app_cos_private_key }}"
+
+      - name: "Checkout default branch"
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: "${{ github.event.repository.default_branch }}"
+          fetch-depth: '0'
+
+      - name: "Install Cosign"
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6  # v4.1.2
+
+      - name: Preserve existing public key
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [[ -f cosign.pub ]]; then
+            backup="cosign-$(date -u +%Y%m%dT%H%M%SZ).pub"
+            cp cosign.pub "$backup"
+            echo "Preserved existing public key as $backup."
+
+            git add "$backup"
+            git commit -m "[Cosign] Preserve previous public key"
+          else
+            echo "::notice::No existing cosign.pub found; skipping backup."
+          fi
+
+      - name: "Generate Key Pair and Password for Cosign"
+        env:
+          GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
+        run: |
+          set -euo pipefail
+
+          COSIGN_PASSWORD="$(openssl rand -base64 32)"
+          if [[ -z "$COSIGN_PASSWORD" ]]; then
+            echo "::error::Failed to generate a Cosign password."
+            exit 1
+          fi
+
+          echo "::add-mask::$COSIGN_PASSWORD"
+          export COSIGN_PASSWORD
+          cosign generate-key-pair github://${{ github.repository }}
+
+      - name: Commit new public key
+        run: |
+          set -euo pipefail
+
+          git add cosign.pub
+          git commit -m "[Cosign] Add new public key"
+
+          if [[ -n "$(git status --porcelain)" ]]; then
+            echo "::error::Unexpected uncommitted changes remain after creating the key commits."
+            git status --short
+            exit 1
+          fi
+
+      - name: Create signed pull request
+        id: pullrequest
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
+        with:
+          token: "${{ steps.generate-token.outputs.token }}"
+          branch: "${{ needs.create-branch.outputs.name }}"
+          base: "${{ github.event.repository.default_branch }}"
+          sign-commits: true
+          title: "[Cosign] Add public key to repository"
+          body: "A new key pair for Cosign has been created. This pull request will add the public key to the repository."
+          labels: "Cosign, dependencies"
+          assignees: "dwydler"
+
+      - name: "Set the variable 'COSIGN_OVERWRITE' to '0'."
+        run: |
+          gh variable set COSIGN_OVERWRITE --body "0"
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+
+
+  cleanup-on-failure:
+    name: "Cleanup on failure"
+    runs-on: ubuntu-slim
+    if: ${{ failure() || cancelled() }}
+
+    needs:
+      - create-branch
+      - gen-keys
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Generate app token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510  # v3.3.0
+        id: generate-token
+        with:
+          client-id: "${{ secrets.gh_app_cos_id }}"
+          private-key: "${{ secrets.gh_app_cos_private_key }}"
+
+      - name: Check if branch exists
+        id: check_branch
+        env:
+          GH_TOKEN: "${{ steps.generate-token.outputs.token }}"
+        run: |
+          BRANCH="${{ needs.create-branch.outputs.name }}"
+
+          if gh api "repos/${{ github.repository }}/git/ref/heads/${BRANCH}" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Delete previously created branch
+        if: steps.check_branch.outputs.exists == 'true'
+        uses: dawidd6/action-delete-branch@d1efac9a6f7a9b408d4e8ff663a99c1fbac17b3f  # v3.1.0
+        with:
+          github_token: "${{ steps.generate-token.outputs.token }}"
+          branches: "${{ needs.create-branch.outputs.name }}"
